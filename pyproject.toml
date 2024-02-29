@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "py-terminal-chat"
+version = "0.1.0"
+description = "A simple chat server written in python asyncio including a client gui to run in terminal."
+authors = ["Ahmed Bin Nasser <ahmednasser.bin@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.scripts]
+ptc-server = 'py_terminal_chat.server.__main__:main'
+ptc-client = 'py_terminal_chat.client.__main__:main'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
