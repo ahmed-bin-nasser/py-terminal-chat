@@ -12,6 +12,9 @@ python = "^3.10"
 ptc-server = 'py_terminal_chat.server.__main__:main'
 ptc-client = 'py_terminal_chat.client.__main__:main'
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
