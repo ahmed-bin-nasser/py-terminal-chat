@@ -39,4 +39,4 @@ class RecentMessageStore:
         async with self.lock:
             writer.write(f"{len(self.recent_messages)}\n".encode("utf-8"))
             for message in self.recent_messages:
-                writer.write(f"{message}\n".encode("utf-8"))
+                writer.write(f"{message}".encode("utf-8"))
