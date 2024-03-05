@@ -7,7 +7,7 @@ from py_terminal_chat.server.handler import ClientHandler
 
 def cli_args():
     parser = argparse.ArgumentParser(
-        description="py-trminal-chat(server):A simple chat server written in Python using asyncio and tcp sockets."
+        description="py-terminal-chat(server):A simple chat server written in Python using asyncio and tcp sockets."
     )
 
     # Add version argument
@@ -17,7 +17,10 @@ def cli_args():
 
     # Add room name argument
     parser.add_argument(
-        "--name", type=str, default="Python Terminal Chat-Room", help="Name for the chat room"
+        "--name",
+        type=str,
+        default="Python Terminal Chat-Room",
+        help="Name for the chat room",
     )
 
     # Add ports argument
@@ -27,7 +30,11 @@ def cli_args():
 
     # Number of recent messages to store
     parser.add_argument(
-        "--nhistory", "-n", type=int, default=10, help="Number of recent messages to store",
+        "--nhistory",
+        "-n",
+        type=int,
+        default=10,
+        help="Number of recent messages to store",
     )
 
     args = parser.parse_args()
@@ -36,17 +43,19 @@ def cli_args():
 
 def main():
     async def run_server():
-        args = cli_args()
-        handler = ClientHandler(args.name, args.nhistory)
-        srv = await asyncio.start_server(handler.accept_connections, "0.0.0.0", args.port)
         try:
+            args = cli_args()
+            handler = ClientHandler(args.name, args.nhistory)
+            srv = await asyncio.start_server(
+                handler.accept_connections, "0.0.0.0", args.port
+            )
             await srv.serve_forever()
 
         except Exception as e:
-            print(f"Exception occurred: {e}")
+            print(f"Exception occurred, details: {repr(e)}")
 
         finally:
             srv.close()
             await srv.wait_closed()
 
-    asyncio.run(run_server())
+    asyncio.run(run_server(), debug=False)

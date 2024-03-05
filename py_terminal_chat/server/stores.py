@@ -1,5 +1,7 @@
 import asyncio
 
+from py_terminal_chat.utils import write_to_stream
+
 
 class StreamWriterStore:
     def __init__(self):
@@ -18,9 +20,12 @@ class StreamWriterStore:
         async with self.lock:
             del self.writers[username]
 
-    async def broadcast(self, message: bytes):
+    async def broadcast(self, message: str):
         for writer in self.writers.values():
-            writer.write(message)
+            if not await write_to_stream(writer, message):
+                return False
+
+        return True
 
 
 class RecentMessageStore:
@@ -35,8 +40,12 @@ class RecentMessageStore:
             if len(self.recent_messages) > self.size:
                 self.recent_messages.pop(0)
 
-    async def send_all(self, writer):
+    async def send_all(self, writer: asyncio.StreamWriter):
         async with self.lock:
-            writer.write(f"{len(self.recent_messages)}\n".encode("utf-8"))
+            await write_to_stream(writer, str(len(self.recent_messages)))
+
             for message in self.recent_messages:
-                writer.write(f"{message}".encode("utf-8"))
+                if not await write_to_stream(writer, message):
+                    return False
+
+        return True

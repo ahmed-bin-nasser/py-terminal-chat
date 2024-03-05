@@ -1,5 +1,11 @@
 import asyncio
-from py_terminal_chat.server.stores import StreamWriterStore, RecentMessageStore
+
+from py_terminal_chat.server.stores import (
+    RecentMessageStore,
+    StreamWriterStore,
+    write_to_stream,
+)
+from py_terminal_chat.utils import read_from_stream
 
 
 class ClientHandler:
@@ -8,45 +14,45 @@ class ClientHandler:
         self.writers = StreamWriterStore()
         self.recent_messages = RecentMessageStore(nhistory)
 
-    @staticmethod
-    async def read_message(reader: asyncio.StreamReader) -> str | None:
-        try:
-            data = await reader.readline()
-            return data.decode("utf-8").strip()
-        except asyncio.IncompleteReadError as _:
-            return None
-
-    async def prompt_username(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def prompt_username(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ):
         while True:
-            writer.write("Enter username: \n".encode("utf-8"))
-            if (username := await self.read_message(reader)) is None:
+            if not await write_to_stream(writer, "Enter Username: "):
                 return None
 
-            if username and await self.writers.add(username, writer):
-                writer.write(f"{username}\n".encode("utf-8"))
+            if (username := await read_from_stream(reader)) is None:
+                return None
+
+            if await self.writers.add(username, writer):
+                if not await write_to_stream(writer, username):
+                    return None
+
+                print(f"An user with username: {username} has joined the room")
                 return username
 
-            writer.write("Sorry, that username is taken.\n".encode("utf-8"))
+            if not await write_to_stream(writer, "Sorry, that username is taken."):
+                return None
 
     async def handle_connection(self, username: str, reader: asyncio.StreamReader):
         while True:
-            if (message := await self.read_message(reader)) is None:
+            if (message := await read_from_stream(reader)) is None:
                 await self.writers.remove(username)
                 return
 
-            message = f"{username}: {message} \n"
+            message = f"{username}: {message}"
+            print(f"--> {message}")
             await self.recent_messages.add_message(message)
-            await self.writers.broadcast(message.encode("utf-8"))
 
-    async def accept_connections(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        writer.write(("Welcome to " + self.name + "\n").encode("utf-8"))
-        await writer.drain()
+            if not await self.writers.broadcast(message):
+                return
 
+    async def accept_connections(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ):
         username = await self.prompt_username(reader, writer)
         if username is not None:
             await self.recent_messages.send_all(writer)
             await self.handle_connection(username, reader)
 
         print(f"User {username} has left the room")
-        # await writer.drain()
-        # await self.writers.broadcast(f"User {username} has left the room".encode("utf-8"))
